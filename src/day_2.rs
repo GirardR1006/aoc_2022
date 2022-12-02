@@ -15,6 +15,29 @@ mod shape {
             _ => Err("aaaaaaah"),
         }
     }
+    pub fn infer_from_chars<'a>(s1: &char, s2: &'a char) -> Result<Shape, &'a str> {
+        match s1 {
+            'A' => match s2 {
+                'X' => Ok(Shape::Scissor),
+                'Y' => Ok(Shape::Rock),
+                'Z' => Ok(Shape::Paper),
+                _ => Err("aaaaah"),
+            },
+            'B' => match s2 {
+                'X' => Ok(Shape::Rock),
+                'Y' => Ok(Shape::Paper),
+                'Z' => Ok(Shape::Scissor),
+                _ => Err("aaaaah"),
+            },
+            'C' => match s2 {
+                'X' => Ok(Shape::Paper),
+                'Y' => Ok(Shape::Scissor),
+                'Z' => Ok(Shape::Rock),
+                _ => Err("aaaaah"),
+            },
+            _ => Err("aaaaaaah"),
+        }
+    }
 
     fn does_r_wins(l: &Shape, r: &Shape) -> bool {
         match (l, r) {
@@ -43,7 +66,7 @@ mod shape {
         score + win_score
     }
 }
-pub fn solve_day(content: String) {
+pub fn solve_day_first_question(content: &String) {
     let mut score = 0;
     for line in content.lines() {
         // Only one char so we know where to split
@@ -54,4 +77,15 @@ pub fn solve_day(content: String) {
         );
     }
     println!("[Day 2] Score: {score}");
+}
+pub fn solve_day_second_question(content: &String) {
+    let mut score = 0;
+    for line in content.lines() {
+        // Only one char so we know where to split
+        let (l, r) = (line.chars().nth(0).unwrap(), line.chars().nth(2).unwrap());
+        let s1 = shape::from_char(&l).unwrap();
+        let s2 = shape::infer_from_chars(&l, &r).unwrap();
+        score += shape::win_score(&s1, &s2);
+    }
+    println!("[Day 2] Score corrected: {score}");
 }
