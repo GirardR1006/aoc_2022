@@ -31,6 +31,6 @@ pub fn solve_day(content: String){
     //last one for EOF
     rotate(&mut maxes, loc);
     let res: i32 = maxes.iter().sum();
-    println!("Maximum amount of food : {res}")
+    println!("[Day 1] Maximum amount of food : {res}")
 
 }
