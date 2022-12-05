@@ -1,26 +1,40 @@
-// Execute the instruction
-fn do_instr(instr: &str, yard: &mut Vec<Vec<char>>) {
-    let instrs: Vec<&str> = instr.split(' ').collect();
-    let amount: usize = instrs[1].parse().unwrap();
-    let mut src: usize = instrs[3].parse().unwrap();
-    let mut dst: usize = instrs[5].parse().unwrap();
-    src -= 1;
-    dst -= 1;
-    // println!("Move {amount} crate from stack {src} to stack {dst}.");
-    // println!("Source stack before instruction {:?}", yard[src]);
-    // println!("Dest stack before instruction {:?}", yard[dst]);
-    for _ in 0..amount {
-        match yard[src].pop() {
-            Some(b_id) => yard[dst].push(b_id),
-            None => (),
+use std::num::ParseIntError;
+
+// Execute the instruction. If all is true, preserve the
+// order on the origin stack
+fn move_from_to_by(yard: &mut Vec<Vec<char>>, from: usize, to: usize, by: usize, all: bool) {
+    if !all {
+        for _ in 0..by {
+            match yard[from].pop() {
+                Some(b_id) => yard[to].push(b_id),
+                None => (),
+            }
+        }
+    } else {
+        let mut buf = Vec::new();
+        for _ in 0..by {
+            match yard[from].pop() {
+                Some(b_id) => buf.push(b_id),
+                None => (),
+            }
+        }
+        for _ in 0..by {
+            yard[to].push(buf.pop().unwrap())
         }
     }
-    // println!("Source stack after instruction {:?}", yard[src]);
-    // println!("Dest stack after instruction {:?}", yard[dst]);
+}
+fn do_instr<'a>(instr: &'a str, yard: &mut Vec<Vec<char>>, all: bool) -> Result<(), ParseIntError> {
+    let instrs: Vec<&str> = instr.split(' ').collect();
+    let amount: usize = instrs[1].parse()?;
+    let mut src: usize = instrs[3].parse()?;
+    let mut dst: usize = instrs[5].parse()?;
+    src -= 1;
+    dst -= 1;
+    Ok(move_from_to_by(yard, src, dst, amount, all))
 }
 
 /// Initialize the yard state and get the list of instructions
-fn parse(content: &str) -> (Vec<Vec<char>>, &str) {
+fn parse(content: &str) -> Option<(Vec<Vec<char>>, &str)> {
     let splt: Vec<&str> = content.split("\n\n").collect();
     let yard_str = splt[0];
     let instr_str = splt[1];
@@ -28,12 +42,10 @@ fn parse(content: &str) -> (Vec<Vec<char>>, &str) {
     // of the latest line.
     let mut yard_lines = yard_str.lines();
     let n_col = yard_lines
-        .next_back()
-        .unwrap()
+        .next_back()?
         .chars()
         .rev()
-        .find(|&x| x.is_numeric())
-        .unwrap()
+        .find(|&x| x.is_numeric())?
         .to_string()
         .parse()
         .unwrap();
@@ -51,33 +63,37 @@ fn parse(content: &str) -> (Vec<Vec<char>>, &str) {
             if ch == ' ' {
                 idx += 4
             } else {
-                let b_id = line.chars().nth(idx + 1).unwrap();
-                yard[idx / 4].push(b_id);
+                match line.chars().nth(idx + 1) {
+                    Some(b_id) => yard[idx / 4].push(b_id),
+                    None => (),
+                };
                 idx += 4
             }
         }
     }
-    (yard, instr_str)
+    Some((yard, instr_str))
 }
 
 pub fn solve_day_first_question(content: &str) {
-    let (mut yard, instrs) = parse(content);
+    let (mut yard, instrs) = parse(content).unwrap();
     for instr in instrs.lines() {
-        do_instr(instr, &mut yard)
+        do_instr(instr, &mut yard, false).unwrap()
     }
+    print!("[Day 3] Final top crates: ");
     for s in yard.iter_mut() {
         print!("{}", s.pop().unwrap())
     }
+    println!("")
 }
 
 pub fn solve_day_second_question(content: &str) {
-    let (mut yard, instrs) = parse(content);
+    let (mut yard, instrs) = parse(content).unwrap();
     for instr in instrs.lines() {
-        do_instr(instr, &mut yard)
+        do_instr(instr, &mut yard, true).unwrap()
     }
-    // Rev all piles as we parsed from top to bottom, and get top id
+    print!("[Day 3] Final top crates corrected: ");
     for s in yard.iter_mut() {
-        s.reverse();
         print!("{}", s.pop().unwrap())
     }
+    println!("")
 }
