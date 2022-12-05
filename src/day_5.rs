@@ -5,17 +5,19 @@ fn do_instr(instr: &str, yard: &mut Vec<Vec<char>>) {
     let src: usize = instrs[3].parse().unwrap();
     let dst: usize = instrs[5].parse().unwrap();
     for _ in 0..amount {
-        yard[dst].push(yard[src].pop().unwrap());
+        let b_id = yard[src].pop().unwrap();
+        yard[dst].push(b_id);
     }
 }
 
-fn parse(content: String) {
+/// Initialize the yard state and get the list of instructions
+fn parse(content: &str) -> (Vec<Vec<char>>, &str) {
     let splt: Vec<&str> = content.split("\n\n").collect();
     let yard_str = splt[0];
     let instr_str = splt[1];
     // get amount of columns and consume only one element
-    // of the iterator after reverse
-    let yard_lines = yard_str.lines().rev();
+    // of the iterator after reverse. Number of chars: n_cols * 4 - 1
+    let mut yard_lines = yard_str.lines().rev();
     let n_col: usize = yard_lines
         .next()
         .unwrap()
@@ -24,17 +26,49 @@ fn parse(content: String) {
         .unwrap()
         .parse()
         .unwrap();
+    let n_chars_line = n_col * 4 - 1;
     let mut yard = vec![Vec::new(); n_col];
-    // re-reverse the iterator, then on each line, split on (' ') and add the relevant character
+    // re-reverse the iterator, then on each line,
+    // move by a certain amount depending on the character we get
+    // Alternatively, could use the advance_by nightly feature
     for line in yard_lines.rev() {
-        for (idx, ch) in line.split(' ').enumerate() {
-            match ch {
-                " " => (),
-                c => {
-                    let box_id = c.trim_matches(&['[', ']']);
-                    yard[idx].push(box_id);
-                }
+        let mut idx = 0;
+        let chs : Vec<char> = line.chars().collect();
+        while idx < n_chars_line{
+            let ch = chs[idx];
+            if  ch == ' '{
+                idx += 4
+            }
+            else{
+                let b_id = line.chars().nth(idx).unwrap();
+                yard[idx/4].push(b_id);
+                idx += 4
             }
         }
+    }
+    (yard, instr_str)
+}
+
+pub fn solve_day_first_question(content : &str){
+    let (mut yard, instrs) = parse(content);
+    for instr in instrs.lines(){
+        do_instr(instr, &mut yard)
+    }
+    // Rev all piles as we parsed from top to bottom, and get top id
+    for s in yard.iter_mut(){
+        s.reverse();
+        println!("{}",s.pop().unwrap())
+    }
+}
+
+pub fn solve_day_second_question(content : &str){
+    let (mut yard, instrs) = parse(content);
+    for instr in instrs.lines(){
+        do_instr(instr, &mut yard)
+    }
+    // Rev all piles as we parsed from top to bottom, and get top id
+    for s in yard.iter_mut(){
+        s.reverse();
+        println!("{}",s.pop().unwrap())
     }
 }
